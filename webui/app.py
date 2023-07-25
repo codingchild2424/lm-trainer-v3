@@ -2,12 +2,12 @@ import gradio as gr
 import torch
 from transformers import pipeline, AutoModelForCausalLM
 
-MODEL = "beomi/KoAlpaca-Polyglot-12.8B"
+MODEL = "../src/polyglot-12.8b-koalpaca-v1.1b/"
 model = AutoModelForCausalLM.from_pretrained(
     MODEL,
     device_map="auto",
-    load_in_8bit=True,
-    revision="8bit",
+    #load_in_8bit=True,
+    #revision="8bit",
     # max_memory=f'{int(torch.cuda.mem_get_info()[0]/1024**3)-2}GB'
 )
 

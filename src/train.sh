@@ -2,7 +2,7 @@
 torchrun --nproc_per_node=8 --master_port=34321 run_clm.py \
 --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
 --train_file='KoAlpaca_v1.1a_textonly.json' \
---num_train_epochs=2 \
+--num_train_epochs=1 \
 --block_size=1024 \
 --per_device_train_batch_size=1 \
 --gradient_accumulation_steps=64 \
