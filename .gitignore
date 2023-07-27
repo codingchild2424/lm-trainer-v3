@@ -1,4 +1,5 @@
 # folders
+datasets/
 legacy/
 src/polyglot-12.8b-koalpaca-v1.1b/
 src/wandb/
