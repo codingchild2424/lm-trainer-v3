@@ -3,7 +3,7 @@
 torchrun --nproc_per_node=8 --master_port=34321 run_mlm.py \
 --model_type='deberta-v2' \
 --tokenizer_name='' \
---train_file='../datasets/curse_train.csv' \
+--train_file='../datasets/pre_datasets/beomi.json' \
 --num_train_epochs=1 \
 --per_device_train_batch_size=2 \
 --gradient_accumulation_steps=64 \
