@@ -235,6 +235,17 @@ def parse_args():
             "If passed, LLM loading time and RAM consumption will be benefited."
         ),
     )
+    
+    ###########################################################
+    # for rope_scaling, https://github.com/huggingface/transformers/pull/24653
+    ###########################################################
+    parser.add_argument(
+        "--rope_scaling",
+        type=dict,
+        default={"type": "dynamic", "factor": 2.0}
+    )
+    
+    
     args = parser.parse_args()
 
     # Sanity checks
