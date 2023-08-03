@@ -4,6 +4,7 @@ legacy/
 src/polyglot-12.8b-koalpaca-v1.1b/
 src/wandb/
 src/model_records/
+src/configs/.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

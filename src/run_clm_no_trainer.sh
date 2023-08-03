@@ -9,12 +9,12 @@ export NCCL_DEBUG=INFO
 # after accelerate config, launch this command
 accelerate launch run_clm_no_trainer.py \
 --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
---train_file='../datasets/pre_datasets/ko_open_orca.json' \
+--train_file='../datasets/pre_datasets/ko_tinystories-v2-gpt4-instruction.json' \
 --num_train_epochs=1 \
 --block_size=1024 \
 --per_device_train_batch_size=3 \
 --gradient_accumulation_steps=128 \
---output_dir='model_records/KoOrca-v1-epochs-1' \
+--output_dir='model_records/ko_tinystories-v2-gpt4-instruction-epochs-3' \
 #--checkpointing_steps=10000 \
 #--resume_from_checkpoint model_records/KoOrca-v1-epochs-1/step_0 \
 

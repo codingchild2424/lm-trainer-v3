@@ -7,8 +7,22 @@ import threading
 import os
 from tqdm import tqdm  # progress bar
 
+import argparse
+
 MAX_WORKERS = 10  # Set the number of threads you want to use.
 lock = threading.Lock()
+
+def define_args():
+    
+    p = argparse.ArgumentParser()
+    
+    p.add_argument("--src_path", type=str)
+    p.add_argument("--dst_path", type=str)
+    
+    config = p.parse_args()
+
+    return config
+
 
 def translator(text, tl, sl):
     try:
@@ -42,22 +56,19 @@ def translate_line(line, output_file, progress_bar):
         output_file.write(json_trans_result + "\n")
         progress_bar.update()
 
-def main():
+def main(cfg):
     
-    data_path = "../../datasets/raw_datasets/open_orca.json"
-    dst_path = "../../datasets/pre_datasets/ko_open_orca.json"
-    
-    with open(data_path, 'r', encoding='utf-8') as f:
+    with open(cfg.src_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()  # read all lines
 
     num_completed_lines = 0
 
-    if os.path.exists(dst_path):
-        with open(dst_path, 'r', encoding='utf-8') as f:
+    if os.path.exists(cfg.dst_path):
+        with open(cfg.dst_path, 'r', encoding='utf-8') as f:
             for line in f:
                 num_completed_lines += 1
 
-    with open(dst_path, "a", encoding="utf-8") as output_file:
+    with open(cfg.dst_path, "a", encoding="utf-8") as output_file:
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             progress_bar = tqdm(total=len(lines) - num_completed_lines, desc="Translating")
             # Start the load operations and mark each future with its line
@@ -71,4 +82,7 @@ def main():
             progress_bar.close()
 
 if __name__ == '__main__':
-    main()
+    
+    cfg = define_args()
+    
+    main(cfg)
