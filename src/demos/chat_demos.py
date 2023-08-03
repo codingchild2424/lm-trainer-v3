@@ -95,23 +95,23 @@ if submitted and user_input:
     if st.session_state['past'] == []:
         prompt = "".join([
             persona_prompt,
-            "학생: " + user_input + "\n",
-            "상담사: "
+            "유저: " + user_input + "\n",
+            "봇: "
         ])
     else:
         
         history = []
         
         for i in range(len(st.session_state['past'])):
-            history.append("학생: " + st.session_state['past'][i])
-            history.append("상담사: " + st.session_state['generated'][i])
+            history.append("유저: " + st.session_state['past'][i])
+            history.append("봇: " + st.session_state['generated'][i])
         
         history = "\n".join(history)
         
         prompt = "\n".join([
             history,
-            "학생: " + user_input + "\n",
-            "상담사: "
+            "유저: " + user_input + "\n",
+            "봇: "
         ])
         
     print("prompt", prompt)
@@ -120,15 +120,6 @@ if submitted and user_input:
 
     st.session_state.past.append(user_input)
     st.session_state.generated.append(output)
-    
-    save_item = {
-               'user_id': user_id,
-               'time_stamp': str(datetime.fromtimestamp(time())),
-               'user_input': user_input,
-               'bot_output': output,
-        }
-    
-    put_item(db_table, save_item)
 
 if st.session_state['generated']:
     
