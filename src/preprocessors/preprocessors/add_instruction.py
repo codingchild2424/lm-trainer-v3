@@ -8,12 +8,12 @@ def instruction_selector(instruction_num):
     
     if instruction_num == 0:
         instuction = " ".join([
-            "지시:릴레이 동화 만들기를 합니다.",
-            "한 문장씩 번갈아 동화를 만듭니다.",
-            "민감한 사회적 문제, 욕설, 위험, 폭력적인 발언을 절대 하지 않습니다.",
-            "불필요하게 비슷한 말을 반복하지 않습니다.",
-            "높임말이나 반말 중에서 한 가지만을 일관되게 사용합니다.",
-            "자, 그럼 이제부터 릴레이 동화 만들기를 시작합니다."
+        "지시:릴레이 동화 만들기를 합니다.",
+        "한 문장씩 번갈아 동화를 만듭니다.",
+        "민감한 사회적 문제, 욕설, 위험, 폭력적인 발언을 절대 하지 않습니다.",
+        "불필요하게 비슷한 말을 반복하지 않습니다.",
+        "높임말이나 반말 중에서 한 가지만을 일관되게 사용합니다.",
+        "자, 그럼 이제부터 릴레이 동화 만들기를 시작합니다."
         ])
     elif instruction_num == 1:
         instuction = " ".join([
@@ -136,20 +136,37 @@ def main(cfg):
             
             for i, e in enumerate(line_list):
                 
+                # if i == masking_num:
+                #     sentence = MASK_TOKEN
+                #     answer = e
+                # else:
+                #     sentence = e
+            
+                # sentence = str(i+1) + "막: " + sentence
+
                 if i == masking_num:
-                    sentence = MASK_TOKEN
+
+                    sentence = ""
+
                     answer = e
+
+                    sentence = str(i+1) + "막: " + sentence
+                    final_instruction_list.append(sentence)
+
+                    break
+
                 else:
                     sentence = e
-            
-                sentence = str(i+1) + "막: " + sentence
                 
-                final_instruction_list.append(sentence)
+                    sentence = str(i+1) + "막: " + sentence
+                    final_instruction_list.append(sentence)
+
+            final_instruction_text = " ".join(final_instruction_list)
                 
-            final_instruction = "\n".join(
+            final_instruction = "".join(
                 [instruction_text] + \
-                final_instruction_list + \
-                [MASK_TOKEN + "에 들어갈 가장 적절한 문장을 작성하라.\n문장: " + answer]
+                [final_instruction_text] + \
+                [answer + "<|endoftext|>"]
                 )
                       
             final_instruction_whole_list.append(final_instruction)

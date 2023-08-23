@@ -239,18 +239,20 @@ def parse_args():
     ###########################################################
     # for rope_scaling, https://github.com/huggingface/transformers/pull/24653
     ###########################################################
-    # parser.add_argument(
-    #     "--use_rope_scaling",
-    #     type=bool,
-    #     default=False
-    # )
+    parser.add_argument(
+        "--rope_scaling",
+        type=dict,
+        default={"type": "dynamic", "factor": 2.0}
+    )
     
-    # parser.add_argument(
-    #     "--rope_scaling",
-    #     type=dict,
-    #     default={"type": "dynamic", "factor": 2.0}
-    # )
-    
+    ###########################################################
+    # lora
+    ###########################################################
+    parser.add_argument(
+        "--use_lora",
+        type=bool,
+        default=True
+    )
     
     args = parser.parse_args()
 
@@ -290,7 +292,7 @@ def main():
     # add for timeout!!!
     # https://github.com/huggingface/accelerate/issues/314
     ipg_handler = InitProcessGroupKwargs(
-        timeout=timedelta(seconds=7400) # 5400 -> 7400
+        timeout=timedelta(seconds=5400)
         )
 
     accelerator = Accelerator(
@@ -420,25 +422,12 @@ def main():
         )
 
     if args.model_name_or_path:
-
-        # if args.use_rope_scaling:
-        #     model = AutoModelForCausalLM.from_pretrained(
-        #         args.model_name_or_path,
-        #         from_tf=bool(".ckpt" in args.model_name_or_path),
-        #         config=config,
-        #         low_cpu_mem_usage=args.low_cpu_mem_usage,
-        #         rope_scaling={"type": "dynamic", "factor": 2.0}
-        #     )
-        # else:
         model = AutoModelForCausalLM.from_pretrained(
             args.model_name_or_path,
             from_tf=bool(".ckpt" in args.model_name_or_path),
             config=config,
-            #config=AutoConfig.from_pretrained(args.config_name),
             low_cpu_mem_usage=args.low_cpu_mem_usage,
-            ignore_mismatched_sizes=True # added
         )
-        
     else:
         logger.info("Training new model from scratch")
         model = AutoModelForCausalLM.from_config(config)

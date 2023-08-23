@@ -5,39 +5,16 @@ export NCCL_DEBUG=INFO
 
 # #!/bin/bash
 
-# accelerate config
-#
-# In which compute environment are you running?
-# This machine
-# ----------------------------------------------------------------------------------------------------------------------------------------Which type of machine are you using?
-# multi-GPU
-# How many different machines will you use (use more than 1 for multi-node training)? [1]: 1
-# Do you wish to optimize your script with torch dynamo?[yes/NO]:no
-# Do you want to use DeepSpeed? [yes/NO]: yes
-# Do you want to specify a json file to a DeepSpeed config? [yes/NO]: no
-# ----------------------------------------------------------------------------------------------------------------------------------------What should be your DeepSpeed's ZeRO optimization stage?
-# 3
-# ----------------------------------------------------------------------------------------------------------------------------------------Where to offload optimizer states?
-# cpu
-# ----------------------------------------------------------------------------------------------------------------------------------------Where to offload parameters?
-# cpu
-# How many gradient accumulation steps you're passing in your script? [1]: 1
-# Do you want to use gradient clipping? [yes/NO]: no
-# Do you want to save 16-bit model weights when using ZeRO Stage-3? [yes/NO]: no
-# Do you want to enable `deepspeed.zero.Init` when using ZeRO Stage-3 for constructing massive models? [yes/NO]: no
-# How many GPU(s) should be used for distributed training? [1]:8
-# ----------------------------------------------------------------------------------------------------------------------------------------Do you wish to use FP16 or BF16 (mixed precision)?
-# fp16 no
-
 # epochs=(1 2 3 4 5 6 7 8 9 10)
 
-accelerate launch run_clm_no_trainer.py \
-    --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
+accelerate launch run_clm_no_pretraining.py \
+    --config_name='EleutherAI/polyglot-ko-1.3b'\
+    --tokenizer_name='EleutherAI/polyglot-ko-1.3b'\
     --train_file='../datasets/pre_datasets/KoAlpaca_v1.1a_textonly.json' \
     --num_train_epochs=1 \
-    --per_device_train_batch_size=1 \
+    --per_device_train_batch_size=3 \
     --gradient_accumulation_steps=128 \
-    --output_dir="model_records/polyglot-test-epochs-1-v3"
+    --output_dir="model_records/polyglot-1.3b-pretraining"
 
 # accelerate launch run_clm_no_trainer.py \
 #     --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
@@ -46,7 +23,7 @@ accelerate launch run_clm_no_trainer.py \
 #     --per_device_train_batch_size=3 \
 #     --gradient_accumulation_steps=128 \
 #     --output_dir="model_records/polyglot-plus-kowiki-epochs-1"
-#     --use_rope_scaling=False
+    #--use_rope_scaling=False
 
 # accelerate launch run_clm_no_trainer.py \
 #     --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
