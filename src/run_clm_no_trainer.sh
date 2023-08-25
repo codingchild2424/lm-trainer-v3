@@ -35,8 +35,8 @@ accelerate launch run_clm_no_trainer.py \
     --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
     --train_file='../datasets/pre_datasets/KoAlpaca_v1.1a_textonly.json' \
     --num_train_epochs=1 \
-    --per_device_train_batch_size=1 \
-    --gradient_accumulation_steps=128 \
+    --per_device_train_batch_size=2 \
+    --gradient_accumulation_steps=32 \
     --output_dir="model_records/polyglot-test-epochs-1-v3"
 
 # accelerate launch run_clm_no_trainer.py \

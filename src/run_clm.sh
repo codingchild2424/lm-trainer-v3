@@ -6,7 +6,7 @@ export NCCL_DEBUG=INFO
 # Works on A100 80G x4
 torchrun --nproc_per_node=8 --master_port=34321 run_clm.py \
 --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
---train_file='../datasets/pre_datasets/ko_open_orca.json' \
+--train_file='../datasets/pre_datasets/kowiki20000.json' \
 --num_train_epochs=1 \
 --block_size=1024 \
 --per_device_train_batch_size=1 \
