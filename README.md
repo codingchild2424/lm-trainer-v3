@@ -3,6 +3,10 @@
 ## Env
 - Nvida Docker Image is needed. Use Dockerfile.
 - Use requirements.txt
+```bash
+pip install -U -r requirements.txt
+```
+
 
 
 ## Experiements

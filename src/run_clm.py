@@ -417,7 +417,6 @@ def main():
             revision=model_args.model_revision,
             use_auth_token=True if model_args.use_auth_token else None,
             torch_dtype=torch_dtype,
-            
             #low_cpu_mem_usage=model_args.low_cpu_mem_usage,
             #device_map="auto",
         )
@@ -444,6 +443,7 @@ def main():
     tok_logger = transformers.utils.logging.get_logger("transformers.tokenization_utils_base")
 
     def tokenize_function(examples):
+        
         with CaptureLogger(tok_logger) as cl:
             output = tokenizer(examples[text_column_name])
         # clm input could be much much longer than block_size
@@ -452,6 +452,7 @@ def main():
                 "^^^^^^^^^^^^^^^^ Please ignore the warning above - this long input will be chunked into smaller bits"
                 " before being passed to the model."
             )
+            
         return output
 
     with training_args.main_process_first(desc="dataset map tokenization"):
