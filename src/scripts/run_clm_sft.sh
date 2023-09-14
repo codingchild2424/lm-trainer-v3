@@ -17,4 +17,4 @@ torchrun --nproc_per_node=8 --master_port=34321 ../trainers/run_clm_sft.py \
 --save_total_limit=1 \
 --seq_length 512 \
 --bf16 True \
---fotmatting_prompts_func simple \
+--response_template '### 답변:' \

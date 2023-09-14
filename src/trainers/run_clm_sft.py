@@ -70,8 +70,8 @@ class ScriptArguments:
     use_auth_token: Optional[bool] = field(default=False, metadata={"help": "Use HF auth token to access the model"})
     bf16: Optional[bool] = field(default=False, metadata={"help": "Use bfloat16 precision"})
     fp16: Optional[bool] = field(default=False, metadata={"help": "Use fp16 precision"})
-    fotmatting_prompts_func: Optional[str] = field(default="simple", metadata={"help": "formatting_prompts_func"})
-
+    instruction_template: Optional[str] = field(default=None, metadata={"help": "instruction_template"})
+    response_template: Optional[str] = field(default=None, metadata={"help": "response_template"})
 
 # main().
 def main():
@@ -126,50 +126,51 @@ def main():
         )
 
     # Step 3: Load the dataset
-    # Use jsonl file
-    dataset = load_dataset(
-        "json",
-        data_files=script_args.train_file,
-        split='train',
-        )
+    # Currently, you can only use jsonl file.
+    # If you want to use other file, you should modify this code.
+    if script_args.train_file.endswith(".jsonl"):
+        dataset = load_dataset(
+            "json",
+            data_files=script_args.train_file,
+            split='train',
+            )
+    else:
+        raise ValueError("You should use jsonl.")
 
     # Step 4: DataCollator
     
-    # 
-    # response_template = "\n\n### 답변:"
-    
-    
-    # def formatting_prompts_func(example):
-    #     output_texts = []
-    #     for i in range(len(example['text'])):
-    #         text = f"### 질문: {example['text'][i]}\n ### 답변: {example['text'][i]}"
-    #         output_texts.append(text)
-    #     return output_texts
-    
     # 4-1. formatting_prompts_func
-    # It's up to your dataset format. Check the trl document.
+    # It's up to your dataset format. 
+    # If you want to modify, then check the trl document.
     # https://huggingface.co/docs/trl/sft_trainer
-    
-    if script_args.fotmatting_prompts_func == "simple":
-        def formatting_prompts_func(example):
-            return example[script_args.dataset_text_field]
+    def formatting_prompts_func(example):
+        return example[script_args.dataset_text_field]
         
-    elif script_args.fotmatting_prompts_func == "complex":
-        def formatting_prompts_func(example):
-            output_texts = []
-            for i in range(len(example[script_args.dataset_text_field])):
-                text = f"### 질문: {example[script_args.dataset_text_field][i]}\n ### 답변: {example[script_args.dataset_text_field][i]}"
-                output_texts.append(text)
-            return output_texts
-        
-    
-
     # 4-2. data_collator
-    response_template = "\n\n### 답변:"
-    collator = DataCollatorForCompletionOnlyLM(
-        response_template, 
-        tokenizer=tokenizer
-        )
+    # You should set the response_template.
+    instruction_template = script_args.instruction_template
+    response_template = script_args.response_template
+    
+    # only use response_template
+    if instruction_template is None and response_template is not None:
+        collator = DataCollatorForCompletionOnlyLM(
+            response_template, 
+            tokenizer=tokenizer
+            )
+    # use instruction_template and response_template both for assistant style conversation data
+    elif instruction_template is not None and response_template is not None:
+        """
+        To instantiate that collator for assistant style conversation data, 
+        pass a response template, an instruction template and the tokenizer. 
+        to fine-tune llm on assistant completions (response_template) only
+        """
+        collator = DataCollatorForCompletionOnlyLM(
+            instruction_template, 
+            response_template, 
+            tokenizer=tokenizer
+            )
+    else:
+        raise ValueError("You should use instruction_template and response_template.")
 
     # Step 5: Define the training arguments
     training_args = TrainingArguments(
