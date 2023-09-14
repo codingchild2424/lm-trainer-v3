@@ -19,4 +19,7 @@ pytest
 tensor_parallel
 peft
 trl
+rouge_score
+openai
+fire
 

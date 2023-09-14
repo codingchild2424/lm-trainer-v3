@@ -6,6 +6,7 @@ src/wandb/
 src/model_records/
 src/configs/.env
 src/scripts/wandb/
+src/instruction_generators/prompt_templates/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

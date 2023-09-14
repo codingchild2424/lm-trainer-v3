@@ -27,51 +27,108 @@ class ScriptArguments:
     """
     The name of the Casual LM model we wish to fine with SFTTrainer
     """
-
-    model_name_or_path: Optional[str] = field(default="facebook/opt-350m", metadata={"help": "the model name"})
+    model_name_or_path: Optional[str] = field(
+        default="facebook/opt-350m", metadata={"help": "the model name"}
+    )
     train_file: Optional[str] = field(
         default="timdettmers/openassistant-guanaco", metadata={"help": "the dataset name"}
     )
-    dataset_text_field: Optional[str] = field(default="text", metadata={"help": "the text field of the dataset"})
-    log_with: Optional[str] = field(default=None, metadata={"help": "use 'wandb' to log with wandb"})
-    learning_rate: Optional[float] = field(default=1.41e-5, metadata={"help": "the learning rate"})
-    per_device_train_batch_size: Optional[int] = field(default=64, metadata={"help": "the batch size"})
-    seq_length: Optional[int] = field(default=512, metadata={"help": "Input sequence length"})
+    dataset_text_field: Optional[str] = field(
+        default="text", metadata={"help": "the text field of the dataset"}
+    )
+    log_with: Optional[str] = field(
+        default=None, metadata={"help": "use 'wandb' to log with wandb"}
+    )
+    learning_rate: Optional[float] = field(
+        default=1.41e-5, metadata={"help": "the learning rate"}
+    )
+    per_device_train_batch_size: Optional[int] = field(
+        default=64, metadata={"help": "the batch size"}
+    )
+    seq_length: Optional[int] = field(
+        default=512, metadata={"help": "Input sequence length"}
+    )
     gradient_accumulation_steps: Optional[int] = field(
         default=16, metadata={"help": "the number of gradient accumulation steps"}
     )
     torch_dtype: Optional[str] = field(
         default="float16", metadata={"help": "the dtype of the model"}
     )
-    load_in_8bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 8 bits precision"})
-    load_in_4bit: Optional[bool] = field(default=False, metadata={"help": "load the model in 4 bits precision"})
-    use_peft: Optional[bool] = field(default=False, metadata={"help": "Wether to use PEFT or not to train adapters"})
-    trust_remote_code: Optional[bool] = field(default=True, metadata={"help": "Enable `trust_remote_code`"})
-    output_dir: Optional[str] = field(default="output", metadata={"help": "the output directory"})
-    peft_lora_r: Optional[int] = field(default=64, metadata={"help": "the r parameter of the LoRA adapters"})
-    peft_lora_alpha: Optional[int] = field(default=16, metadata={"help": "the alpha parameter of the LoRA adapters"})
-    logging_steps: Optional[int] = field(default=1, metadata={"help": "the number of logging steps"})
-    use_auth_token: Optional[bool] = field(default=True, metadata={"help": "Use HF auth token to access the model"})
-    num_train_epochs: Optional[int] = field(default=3, metadata={"help": "the number of training epochs"})
-    max_steps: Optional[int] = field(default=-1, metadata={"help": "the number of training steps"})
+    load_in_8bit: Optional[bool] = field(
+        default=False, metadata={"help": "load the model in 8 bits precision"}
+    )
+    load_in_4bit: Optional[bool] = field(
+        default=False, metadata={"help": "load the model in 4 bits precision"}
+    )
+    use_peft: Optional[bool] = field(
+        default=False, metadata={"help": "Wether to use PEFT or not to train adapters"}
+    )
+    trust_remote_code: Optional[bool] = field(
+        default=True, metadata={"help": "Enable `trust_remote_code`"}
+    )
+    output_dir: Optional[str] = field(
+        default="output", metadata={"help": "the output directory"}
+    )
+    peft_lora_r: Optional[int] = field(
+        default=64, metadata={"help": "the r parameter of the LoRA adapters"}
+    )
+    peft_lora_alpha: Optional[int] = field(
+        default=16, metadata={"help": "the alpha parameter of the LoRA adapters"}
+    )
+    logging_steps: Optional[int] = field(
+        default=1, metadata={"help": "the number of logging steps"}
+    )
+    use_auth_token: Optional[bool] = field(
+        default=True, metadata={"help": "Use HF auth token to access the model"}
+    )
+    num_train_epochs: Optional[int] = field(
+        default=3, metadata={"help": "the number of training epochs"}
+    )
+    max_steps: Optional[int] = field(
+        default=-1, metadata={"help": "the number of training steps"}
+    )
     save_steps: Optional[int] = field(
         default=100, metadata={"help": "Number of updates steps before two checkpoint saves"}
     )
-    save_total_limit: Optional[int] = field(default=10, metadata={"help": "Limits total number of checkpoints."})
-    push_to_hub: Optional[bool] = field(default=False, metadata={"help": "Push the model to HF Hub"})
-    hub_model_id: Optional[str] = field(default=None, metadata={"help": "The name of the model on HF Hub"})
-    deepspeed: Optional[str] = field(default=None, metadata={"help": "DeepSpeed training configuration file"})
+    save_total_limit: Optional[int] = field(
+        default=10, metadata={"help": "Limits total number of checkpoints."}
+    )
+    push_to_hub: Optional[bool] = field(
+        default=False, metadata={"help": "Push the model to HF Hub"}
+    )
+    hub_model_id: Optional[str] = field(
+        default=None, metadata={"help": "The name of the model on HF Hub"}
+    )
+    deepspeed: Optional[str] = field(
+        default=None, metadata={"help": "DeepSpeed training configuration file"}
+    )
     validatoin_split_percentage: Optional[int] = field(
         default=5, metadata={"help": "The percentage of the train set used as validation set"}
     )
-    cache_dir: Optional[str] = field(default=None, metadata={"help": "The cache directory"})
-    use_fast_tokenizer: Optional[bool] = field(default=True, metadata={"help": "Use fast tokenizer"})
-    model_revision: Optional[str] = field(default="main", metadata={"help": "The revision of the model"})
-    use_auth_token: Optional[bool] = field(default=False, metadata={"help": "Use HF auth token to access the model"})
-    bf16: Optional[bool] = field(default=False, metadata={"help": "Use bfloat16 precision"})
-    fp16: Optional[bool] = field(default=False, metadata={"help": "Use fp16 precision"})
-    instruction_template: Optional[str] = field(default=None, metadata={"help": "instruction_template"})
-    response_template: Optional[str] = field(default=None, metadata={"help": "response_template"})
+    cache_dir: Optional[str] = field(
+        default=None, metadata={"help": "The cache directory"}
+    )
+    use_fast_tokenizer: Optional[bool] = field(
+        default=True, metadata={"help": "Use fast tokenizer"}
+    )
+    model_revision: Optional[str] = field(
+        default="main", metadata={"help": "The revision of the model"}
+    )
+    use_auth_token: Optional[bool] = field(
+        default=False, metadata={"help": "Use HF auth token to access the model"}
+    )
+    bf16: Optional[bool] = field(
+        default=False, metadata={"help": "Use bfloat16 precision"}
+    )
+    fp16: Optional[bool] = field(
+        default=False, metadata={"help": "Use fp16 precision"}
+    )
+    instruction_template: Optional[str] = field(
+        default=None, metadata={"help": "instruction_template"}
+    )
+    response_template: Optional[str] = field(
+        default=None, metadata={"help": "response_template"}
+    )
 
 # main().
 def main():
@@ -139,25 +196,27 @@ def main():
 
     # Step 4: DataCollator
     
-    # 4-1. formatting_prompts_func
-    # It's up to your dataset format. 
-    # If you want to modify, then check the trl document.
-    # https://huggingface.co/docs/trl/sft_trainer
+    # Step 4-1. formatting_prompts_func
+    """
+    It's up to your dataset format. 
+    If you want to modify, then check the trl document.
+    https://huggingface.co/docs/trl/sft_trainer
+    """
     def formatting_prompts_func(example):
         return example[script_args.dataset_text_field]
         
-    # 4-2. data_collator
+    # Step 4-2. data_collator
     # You should set the response_template.
     instruction_template = script_args.instruction_template
     response_template = script_args.response_template
     
-    # only use response_template
+    # Only use response_template
     if instruction_template is None and response_template is not None:
         collator = DataCollatorForCompletionOnlyLM(
             response_template, 
             tokenizer=tokenizer
             )
-    # use instruction_template and response_template both for assistant style conversation data
+    # Use instruction_template and response_template both for assistant style conversation data
     elif instruction_template is not None and response_template is not None:
         """
         To instantiate that collator for assistant style conversation data, 
