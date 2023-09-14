@@ -4,7 +4,7 @@
 # Continual Learning
 # - For continual learinng, model_name_or_path must be changed
 ####################################
-torchrun --nproc_per_node=8 --master_port=34321 ../run_clm.py \
+torchrun --nproc_per_node=8 --master_port=34321 ../trainers/run_clm.py \
 --model_name_or_path='EleutherAI/polyglot-ko-12.8b' \
 --train_file='/workspace/Coding/lm-trainer/src/KoAlpaca_v1.1a_textonly.json' \
 --num_train_epochs=1 \
@@ -14,7 +14,7 @@ torchrun --nproc_per_node=8 --master_port=34321 ../run_clm.py \
 --torch_dtype=float16 \
 --fp16 \
 --output_dir='../model_results/polyglot-12.8b-kowiki20000-v2' \
---deepspeed=../ds_zero3-nooffload.json \
+--deepspeed=../ds_configs/ds_zero3-nooffload.json \
 --do_train \
 --save_strategy='epoch' \
 --logging_strategy='steps' \

@@ -153,6 +153,7 @@ def main():
     if script_args.fotmatting_prompts_func == "simple":
         def formatting_prompts_func(example):
             return example[script_args.dataset_text_field]
+        
     elif script_args.fotmatting_prompts_func == "complex":
         def formatting_prompts_func(example):
             output_texts = []
@@ -160,6 +161,8 @@ def main():
                 text = f"### 질문: {example[script_args.dataset_text_field][i]}\n ### 답변: {example[script_args.dataset_text_field][i]}"
                 output_texts.append(text)
             return output_texts
+        
+    
 
     # 4-2. data_collator
     response_template = "\n\n### 답변:"
