@@ -1,4 +1,6 @@
-# LM-Trainer
+# LM-Trainer-v3
+
+This repo is for training LM easily.
 
 ## Env
 - Nvida Docker Image is needed. Use Dockerfile.
@@ -15,3 +17,5 @@ pip install -U -r requirements.txt
 
 ## Reference
 - KoAlpaca (https://github.com/Beomi/KoAlpaca)
+- trl (https://github.com/huggingface/trl)
+- transformers (https://github.com/huggingface/transformers)

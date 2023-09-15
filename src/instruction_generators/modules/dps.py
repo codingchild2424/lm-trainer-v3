@@ -37,7 +37,6 @@ class DpsModule:
     def preprocess(
         self, 
         data,
-        prompt_chain_maker
         ):
         
         prompt_chain_result_list = []
@@ -60,19 +59,26 @@ class DpsModule:
         data_list = []
         
         for i in data.split("\n"):
-            if i == "":
+            if i == "" or "user" not in i or "bot" not in i:
                 continue
             else:
-                try:
+                try:       
+                    if i.split(":")[0] == "user":
+                        dict_key = "user"
+                    else:
+                        dict_key = "bot"
+                    
+                    value = i.split(":")[1]
+                    
                     data_list.append(
-                        { i.split(":")[0] : i.split(":")[1] }
-                    ) 
+                        "### " + dict_key + ": " + value
+                    )
                 except:
                     print("[70] postprocess error", i)
                     continue
                 
         data_list_dict = {
-            "text": data_list
+            "text": "\n".join(data_list)
         }
         
         return data_list_dict

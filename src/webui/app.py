@@ -2,7 +2,7 @@ import gradio as gr
 import torch
 from transformers import pipeline, AutoModelForCausalLM
 
-MODEL = "../src/polyglot-12.8b-koalpaca-v1.1b/"
+MODEL = "/workspace/Coding/lm-trainer/model_records/koalpaca_sft-v1"
 model = AutoModelForCausalLM.from_pretrained(
     MODEL,
     device_map="auto",
@@ -15,7 +15,7 @@ pipe = pipeline(
     "text-generation",
     model=model,
     tokenizer=MODEL,
-    # device=2,
+    #device=8,
 )
 
 

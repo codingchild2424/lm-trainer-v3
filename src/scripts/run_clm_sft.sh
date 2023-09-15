@@ -11,7 +11,7 @@ torchrun --nproc_per_node=8 --master_port=34321 ../trainers/run_clm_sft.py \
 --per_device_train_batch_size=1 \
 --gradient_accumulation_steps=64 \
 --torch_dtype=bfloat16 \
---output_dir='../../model_results/polyglot-12.8b-kowiki20000-v2' \
+--output_dir='/workspace/Coding/lm-trainer/model_records/koalpaca_sft-v1' \
 --deepspeed=../ds_configs/ds_zero3-nooffload.json \
 --use_peft=False \
 --save_total_limit=1 \

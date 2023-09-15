@@ -3,10 +3,10 @@ datasets/
 legacy/
 src/polyglot-12.8b-koalpaca-v1.1b/
 src/wandb/
-src/model_records/
 src/configs/.env
 src/scripts/wandb/
 src/instruction_generators/prompt_templates/
+model_records/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
