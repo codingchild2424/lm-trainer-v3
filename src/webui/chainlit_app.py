@@ -16,6 +16,7 @@ session_num = 0
 # avatar_url
 #############################################################
 chatbot_name = "chatbot"
+avatar_url = "https://avatars.githubusercontent.com/u/25720743?s=200&v=4"
 
 #############################################################
 # Model
@@ -64,7 +65,7 @@ history=[]
 @cl.on_message
 async def main(message: str):
     
-    await cl.Avatar(name=chatbot_name).send()
+    await cl.Avatar(name=chatbot_name, url=avatar_url).send()
 
     # create a user message
     user_message = {"role": "질문", "content": message}
