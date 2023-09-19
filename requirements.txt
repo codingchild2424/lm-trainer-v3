@@ -22,7 +22,6 @@ trl
 rouge_score
 openai
 fire
-bitsandbyte
 gradio
 chainlit
 
