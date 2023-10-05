@@ -34,6 +34,29 @@ class DpsModule:
             
         return prompt_chain_result_list
     
+    def preprocess_with_prompt_chain_generator_tinystories(
+        self, 
+        data,
+        prompt_chain_maker
+        ):
+        
+        prompt_chain_result_list = []
+        
+        for i in data:
+            var1 = i['var1']
+            var2 = i['var2']
+            var3 = i['var3']
+
+            prompt_chain_result = prompt_chain_maker(
+                var1 = var1,
+                var2 = var2,
+                var3 = var3
+                )
+            
+            prompt_chain_result_list.append(prompt_chain_result)
+            
+        return prompt_chain_result_list
+    
     def preprocess(
         self, 
         data,
@@ -52,6 +75,25 @@ class DpsModule:
             prompt_chain_result_list.append(prompt_chain_result)
             
         return prompt_chain_result_list
+    
+    def postprocess_tinystories(self, data):
+        
+        data_list = []
+        
+        for i in data.split("\n"):
+            try:       
+                data_list.append(
+                    i
+                )
+            except:
+                print("[70] postprocess error", i)
+                continue
+                
+        data_list_dict = {
+            "text": "\n".join(data_list)
+        }
+        
+        return data_list_dict
 
 
     def postprocess(self, data):
