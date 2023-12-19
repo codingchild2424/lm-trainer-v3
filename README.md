@@ -9,6 +9,14 @@ This repo is for training LM easily.
 pip install -U -r requirements.txt
 ```
 
+or
+
+- You can use huggingface docker image from Dockerhub
+https://hub.docker.com/r/huggingface/transformers-all-latest-torch-nightly-gpu
+- Install deepspeed
+```bash
+pip install -U deepspeed
+```
 
 
 ## Experiements

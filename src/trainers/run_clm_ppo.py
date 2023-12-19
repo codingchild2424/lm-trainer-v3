@@ -1,238 +1,281 @@
-# coding=utf-8
-# Copyright 2023 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 from dataclasses import dataclass, field
 from typing import Optional
 
 import torch
+from accelerate import Accelerator
 from datasets import load_dataset
-from torch.optim import Adam
+from peft import LoraConfig
 from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
+    BitsAndBytesConfig, 
+    HfArgumentParser, 
+    TrainingArguments, 
     AutoTokenizer,
-    HfArgumentParser,
-    RobertaForSequenceClassification,
-    RobertaTokenizer,
+    pipeline
+)
+from trl import (
+    PPOConfig,
+    AutoModelForCausalLMWithValueHead,
+    PPOTrainer
 )
 
-from trl import AutoModelForCausalLMWithValueHead, PPOConfig, PPOTrainer, create_reference_model, set_seed
-from trl.core import LengthSampler
+from tqdm import tqdm
 
-
-tqdm.pandas()
-
-########################################################################
-# This is a fully working simple example to use trl with accelerate.
-#
-# This example fine-tunes a GPTJ model to generate less toxic contents
-# by using allenai/real-toxicity-prompts dataset. We use PPO
-#  (proximal policy optimization) to optimize the model.
-# in any of the following settings (with the same script):
-#   - single CPU or single GPU
-#   - multi GPUS (using PyTorch distributed mode)
-#   - multi GPUS (using DeepSpeed ZeRO-Offload stages 1 & 2)
-#   - fp16 (mixed-precision) or fp32 (normal precision)
-#
-# To run it in each of these various modes, first initialize the accelerate
-# configuration with `accelerate config`
-#
-########################################################################
-
-
-# We first define the configuration of the experiment, defining the model, the dataset,
-# the training parameters, and the PPO parameters.
-# Check the default arguments in the `PPOConfig` class for more details.
-# If you want to log with tensorboard, add the kwarg
-# `project_kwargs={"logging_dir": PATH_TO_LOGS}` to the PPOConfig.
 @dataclass
 class ScriptArguments:
     """
-    The name of the Casual LM model we wish to fine with PPO
+    The name of the Casual LM model we wish to fine with SFTTrainer
     """
-
-    # NOTE: gpt2 models use Conv1D instead of Linear layers which are not yet supported in 8 bit mode
-    # models like gpt-neo* models are more suitable.
-    model_name: Optional[str] = field(default="ybelkada/gpt-j-6b-sharded-bf16", metadata={"help": "the model name"})
-    log_with: Optional[str] = field(default=None, metadata={"help": "use 'wandb' to log with wandb"})
-    learning_rate: Optional[float] = field(default=(1.47e-5) * 2, metadata={"help": "the learning rate"})
-    mini_batch_size: Optional[int] = field(default=4, metadata={"help": "the PPO minibatch size"})
-    batch_size: Optional[int] = field(default=16, metadata={"help": "the batch size"})
+    model_name_or_path: Optional[str] = field(
+        default="facebook/opt-350m", metadata={"help": "the model name"}
+    )
+    train_file: Optional[str] = field(
+        default="timdettmers/openassistant-guanaco", metadata={"help": "the dataset name"}
+    )
+    dataset_text_field: Optional[str] = field(
+        default="text", metadata={"help": "the text field of the dataset"}
+    )
+    log_with: Optional[str] = field(
+        default=None, metadata={"help": "use 'wandb' to log with wandb"}
+    )
+    learning_rate: Optional[float] = field(
+        default=1.41e-5, metadata={"help": "the learning rate"}
+    )
+    per_device_train_batch_size: Optional[int] = field(
+        default=64, metadata={"help": "the batch size"}
+    )
+    seq_length: Optional[int] = field(
+        default=512, metadata={"help": "Input sequence length"}
+    )
     gradient_accumulation_steps: Optional[int] = field(
-        default=1, metadata={"help": "the number of gradient accumulation steps"}
+        default=16, metadata={"help": "the number of gradient accumulation steps"}
     )
-    model_save_path: Optional[str] = field(
-        default="./gpt-j-6B-detoxified-long-context-26-shl-1e4-final",
-        metadata={"help": "the path to save the model"},
+    torch_dtype: Optional[str] = field(
+        default="float16", metadata={"help": "the dtype of the model"}
+    )
+    load_in_8bit: Optional[bool] = field(
+        default=False, metadata={"help": "load the model in 8 bits precision"}
+    )
+    load_in_4bit: Optional[bool] = field(
+        default=False, metadata={"help": "load the model in 4 bits precision"}
+    )
+    use_peft: Optional[bool] = field(
+        default=False, metadata={"help": "Wether to use PEFT or not to train adapters"}
+    )
+    trust_remote_code: Optional[bool] = field(
+        default=True, metadata={"help": "Enable `trust_remote_code`"}
+    )
+    output_dir: Optional[str] = field(
+        default="output", metadata={"help": "the output directory"}
+    )
+    peft_lora_r: Optional[int] = field(
+        default=64, metadata={"help": "the r parameter of the LoRA adapters"}
+    )
+    peft_lora_alpha: Optional[int] = field(
+        default=16, metadata={"help": "the alpha parameter of the LoRA adapters"}
+    )
+    logging_steps: Optional[int] = field(
+        default=1, metadata={"help": "the number of logging steps"}
+    )
+    use_auth_token: Optional[bool] = field(
+        default=True, metadata={"help": "Use HF auth token to access the model"}
+    )
+    num_train_epochs: Optional[int] = field(
+        default=3, metadata={"help": "the number of training epochs"}
+    )
+    max_steps: Optional[int] = field(
+        default=-1, metadata={"help": "the number of training steps"}
+    )
+    save_steps: Optional[int] = field(
+        default=100, metadata={"help": "Number of updates steps before two checkpoint saves"}
+    )
+    save_total_limit: Optional[int] = field(
+        default=10, metadata={"help": "Limits total number of checkpoints."}
+    )
+    push_to_hub: Optional[bool] = field(
+        default=False, metadata={"help": "Push the model to HF Hub"}
+    )
+    hub_model_id: Optional[str] = field(
+        default=None, metadata={"help": "The name of the model on HF Hub"}
+    )
+    deepspeed: Optional[str] = field(
+        default=None, metadata={"help": "DeepSpeed training configuration file"}
+    )
+    validatoin_split_percentage: Optional[int] = field(
+        default=5, metadata={"help": "The percentage of the train set used as validation set"}
+    )
+    cache_dir: Optional[str] = field(
+        default=None, metadata={"help": "The cache directory"}
+    )
+    use_fast_tokenizer: Optional[bool] = field(
+        default=True, metadata={"help": "Use fast tokenizer"}
+    )
+    model_revision: Optional[str] = field(
+        default="main", metadata={"help": "The revision of the model"}
+    )
+    use_auth_token: Optional[bool] = field(
+        default=False, metadata={"help": "Use HF auth token to access the model"}
+    )
+    bf16: Optional[bool] = field(
+        default=False, metadata={"help": "Use bfloat16 precision"}
+    )
+    fp16: Optional[bool] = field(
+        default=False, metadata={"help": "Use fp16 precision"}
+    )
+    reward_model_name_or_path: Optional[str] = field(
+        default="facebook/bart-large", metadata={"help": "the model name"}
     )
 
 
-parser = HfArgumentParser(ScriptArguments)
-script_args = parser.parse_args_into_dataclasses()[0]
-
-config = PPOConfig(
-    model_name=script_args.model_name,
-    learning_rate=script_args.learning_rate,
-    log_with=script_args.log_with,
-    ppo_epochs=100,
-    mini_batch_size=script_args.mini_batch_size,
-    batch_size=script_args.batch_size,
-    gradient_accumulation_steps=script_args.gradient_accumulation_steps,
-)
 
 
-# Below is an example function to build the dataset. In our case, we use the IMDB dataset
-# from the `datasets` library. One should customize this function to train the model on
-# its own dataset.
-def build_dataset(
-    config, dataset_name="allenai/real-toxicity-prompts", input_min_text_length=5, input_max_text_length=10
-):
-    """
-    Build dataset for training. This builds the dataset from `load_dataset`, one should
-    customize this function to train the model on its own dataset.
-
-    Args:
-        dataset_name (`str`):
-            The name of the dataset to be loaded.
-
-    Returns:
-        dataloader (`torch.utils.data.DataLoader`):
-            The dataloader for the dataset.
-    """
-    tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+def main():
+    parser = HfArgumentParser(ScriptArguments)
+    
+    script_args = parser.parse_args_into_dataclasses()[0]
+    
+    # Step 1: Load the model
+    if script_args.load_in_8bit and script_args.load_in_4bit:
+        raise ValueError("You can't load the model in 8 bits and 4 bits at the same time")
+    elif script_args.load_in_8bit or script_args.load_in_4bit:
+        quantization_config = BitsAndBytesConfig(
+            load_in_8bit=script_args.load_in_8bit, load_in_4bit=script_args.load_in_4bit
+        )
+        # Copy the model to each device
+        device_map = {"": Accelerator().local_process_index}
+        torch_dtype = torch.bfloat16
+    else:
+        device_map = None
+        quantization_config = None
+        
+        # torch_dtype
+        if script_args.torch_dtype == "float16":
+            torch_dtype = torch.float16
+        elif script_args.torch_dtype == "float32":
+            torch_dtype = torch.float32
+        elif script_args.torch_dtype == "bfloat16":
+            # for Amphere GPU (A100, A6000...)
+            # if you have trouble which lr doesn't decrease, try to use bfloat16
+            torch_dtype = torch.bfloat16
+        else:
+            torch_dtype = None
+    
+    model = AutoModelForCausalLMWithValueHead.from_pretrained(
+        script_args.model_name_or_path,
+        quantization_config=quantization_config,
+        device_map=device_map,
+        torch_dtype=torch_dtype,
+        use_auth_token=script_args.use_auth_token,
+    )
+    ref_model = AutoModelForCausalLMWithValueHead.from_pretrained(
+        script_args.model_name_or_path,
+        quantization_config=quantization_config,
+        device_map=device_map,
+        torch_dtype=torch_dtype,
+        use_auth_token=script_args.use_auth_token,
+    )
+    
+    # Step 2: Load the tokenizer
+    tokenizer_kwargs = {
+        "cache_dir": script_args.cache_dir,
+        "use_fast": script_args.use_fast_tokenizer,
+        "revision": script_args.model_revision,
+        "use_auth_token": True if script_args.use_auth_token else None,
+    }
+    tokenizer = AutoTokenizer.from_pretrained(
+        script_args.model_name_or_path,
+        **tokenizer_kwargs,
+        )
+    
     tokenizer.pad_token = tokenizer.eos_token
-
-    ds = load_dataset(dataset_name, split="train")
-
-    def filter_fn(sample):
-        toxicity = sample["prompt"]["toxicity"]
-        return toxicity is not None and toxicity > 0.3
-
-    ds = ds.filter(filter_fn, batched=False)
-
-    input_size = LengthSampler(input_min_text_length, input_max_text_length)
-
+    
+    # Step 3: Load the dataset
+    # Currently, you can only use jsonl file.
+    # If you want to use other file, you should modify this code.
+    if script_args.train_file.endswith(".json"):
+        dataset = load_dataset(
+            "json",
+            data_files=script_args.train_file,
+            split='train',
+            )
+    else:
+        raise ValueError("You should use jsonl.")
+    
     def tokenize(sample):
-        prompt = sample["prompt"]["text"]
-        continuation = sample["continuation"]["text"]
-
-        sample["input_ids"] = tokenizer.encode(prompt + continuation)[: input_size()]
-        sample["query"] = tokenizer.decode(sample["input_ids"])
+        sample["input_ids"] = tokenizer.encode(sample["text"])
+        sample['query'] = tokenizer.decode(sample["input_ids"])
+        
         return sample
 
-    ds = ds.map(tokenize, batched=False)
-    ds.set_format(type="torch")
-
-    ds = ds.train_test_split(test_size=0.2, shuffle=False)["train"]
-
-    return ds
-
-
-# We retrieve the dataloader by calling the `build_dataset` function.
-min_input_length = 30
-max_input_length = 40
-dataset = build_dataset(config, input_min_text_length=min_input_length, input_max_text_length=max_input_length)
-
-
-def collator(data):
-    return dict((key, [d[key] for d in data]) for key in data[0])
-
-
-# set seed before initializing value head for deterministic eval
-set_seed(config.seed)
-
-# Now let's build the model, the reference model, and the tokenizer. We first load the model
-# in bfloat16 to save memory using `transformers`.
-model = AutoModelForCausalLM.from_pretrained(config.model_name, torch_dtype=torch.bfloat16)
-# And then we pass the loaded model to `AutoModelForCausalLMWithValueHead`.
-model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
-
-# We create a reference model by sharing 20 layers
-ref_model = create_reference_model(model, num_shared_layers=20)
-
-# We make sure to use `Adam` optimizer on the model parameters that require gradients.
-optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.learning_rate)
-
-# GPT-2 / GPT-J tokenizer has a pad token, but it is not eos_token by default. We need to set it to eos_token.
-# only for this model.
-tokenizer = AutoTokenizer.from_pretrained(config.model_name)
-tokenizer.pad_token = tokenizer.eos_token
-
-# We then build the PPOTrainer, passing the model, the reference model, the tokenizer
-ppo_trainer = PPOTrainer(
-    config,
-    model,
-    ref_model=ref_model,
-    tokenizer=tokenizer,
-    dataset=dataset,
-    data_collator=collator,
-    optimizer=optimizer,
-)
-
-# We then build the reward pipeline, we will use the toxicity model to compute the reward.
-# We first load the toxicity model and tokenizer.
-toxicity_model_id = "facebook/roberta-hate-speech-dynabench-r4-target"
-toxicity_tokenizer = RobertaTokenizer.from_pretrained(toxicity_model_id)
-# We load the toxicity model in fp16 to save memory.
-toxicity_model = RobertaForSequenceClassification.from_pretrained(toxicity_model_id, torch_dtype=torch.float16).to(
-    ppo_trainer.accelerator.device
-)
-
-
-# We then define the arguments to pass to the `generate` function. These arguments
-# are passed to the `generate` function of the PPOTrainer, which is a wrapper around
-# the `generate` function of the trained model.
-generation_kwargs = {
-    "min_length": -1,
-    "top_k": 0.0,
-    "top_p": 1.0,
-    "do_sample": True,
-    "pad_token_id": tokenizer.eos_token_id,
-}
-output_min_length = 20
-output_max_length = 30
-output_length_sampler = LengthSampler(output_min_length, output_max_length)
-
-model_save_path = script_args.model_save_path
-
-for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
-    query_tensors = batch["input_ids"]
-
-    # Get response from the policy model
-    response_tensors = []
-    for query in query_tensors:
-        gen_len = output_length_sampler()
-        generation_kwargs["max_new_tokens"] = gen_len
-        response = ppo_trainer.generate(query, **generation_kwargs)
-        response_tensors.append(response.squeeze()[-gen_len:])
-    batch["response"] = [tokenizer.decode(r.squeeze()) for r in response_tensors]
-
-    # Compute sentiment score # noqa
-    texts = batch["response"]
-    toxicity_inputs = toxicity_tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(
-        ppo_trainer.accelerator.device
+    dataset = dataset.map(tokenize, batched=False)
+    
+    def collator(data):
+        return dict((key, [d[key] for d in data]) for key in data[0])
+    
+    # Step 4. PPO Config and PPO Trainer
+    ppo_config = PPOConfig(
+        model_name=script_args.model_name_or_path,
+        learning_rate=script_args.learning_rate,
     )
-    logits = toxicity_model(**toxicity_inputs).logits.float()
-    toxicity_labels = (logits[:, 0]).tolist()
+    
+    ppo_trainer = PPOTrainer(
+        model=model,
+        # # the second model serves as a reference to calculate the KL-divergence from the starting point.
+        ref_model=ref_model,
+        config=ppo_config,
+        tokenizer=tokenizer,
+        dataset=dataset,
+        data_collator=collator,
+    )
+    
+    generation_kwargs = {
+        "min_length": -1,
+        "top_k": 0.0,
+        "top_p": 1.0,
+        "do_sample": True,
+        "pad_token_id": tokenizer.eos_token_id,
+    }
+    
+    # 5. Load reward model
+    
+    device = ppo_trainer.accelerator.device
+    if ppo_trainer.accelerator.num_processes == 1:
+        device = 0 if torch.cuda.is_available() else "cpu"
+    
+    reward_model = pipeline(
+        "text-classification",
+        model=script_args.reward_model_name_or_path,
+        tokenizer=script_args.reward_model_name_or_path,
+        device=device,
+    )
+    
+    
+    # 6. Train 
+    for epoch, batch in tqdm(enumerate(ppo_trainer.get_train_dataloader())):
+        
+        query_tensors = batch["input_ids"]
 
-    rewards = [torch.tensor(output) for output in toxicity_labels]
+        #### Get response from model
+        response_tensors = []
+        for query in query_tensors:
+            gen_len = output_length_sampler()
+            generation_kwargs["max_new_tokens"] = gen_len
+            response = ppo_trainer.generate(query, **generation_kwargs)
+            response_tensors.append(response.squeeze()[-gen_len:])
+        batch["response"] = [tokenizer.decode(r.squeeze()) for r in response_tensors]
 
-    # Run PPO step
-    stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
-    ppo_trainer.log_stats(stats, batch, rewards)
+        #### Compute sentiment score
+        texts = [q + r for q, r in zip(batch["query"], batch["response"])]
+        pipe_outputs = sentiment_pipe(texts, **sent_kwargs)
+        rewards = [torch.tensor(output[1]["score"]) for output in pipe_outputs]
 
-    # Save model every 100 epochs
-    if epoch % 100 == 0:
-        if ppo_trainer.accelerator.is_main_process:
-            ppo_trainer.save_pretrained(model_save_path)
+        #### Run PPO step
+        stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
+        ppo_trainer.log_stats(stats, batch, rewards)
+        #### Save model
+        ppo_trainer.save_model(script_args.output_dir)
+
+
+if __name__ == '__main__':
+    main()

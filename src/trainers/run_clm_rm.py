@@ -146,7 +146,13 @@ model = AutoModelForSequenceClassification.from_pretrained(
 
 # Step 2: Load the dataset and pre-process it
 tokenizer = AutoTokenizer.from_pretrained(script_args.model_name_or_path)
-train_dataset = load_dataset(script_args.train_file, split="train")
+
+if script_args.train_file.endswith(".csv"):
+    train_dataset = load_dataset("csv", data_files=script_args.train_file, split="train")
+elif script_args.train_file.endswith(".json"):
+    train_dataset = load_dataset("json", data_files=script_args.train_file, split="train")
+else:
+    train_dataset = load_dataset(script_args.train_file, split="trai")
 
 
 # Tokenize chosen/rejected pairs of inputs
@@ -234,3 +240,5 @@ trainer = RewardTrainer(
 )
 
 trainer.train()
+
+trainer.save_model(script_args.output_dir)
