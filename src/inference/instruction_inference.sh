@@ -1,0 +1,2 @@
+
+CUDA_VISIBLE_DEVICES=0 python instruction_inference.py

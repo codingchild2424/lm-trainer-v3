@@ -91,6 +91,12 @@ class ScriptArguments:
             "help": "the output directory"
         }
     )
+    torch_dtype: Optional[str] = field(
+        default="bfloat16",
+        metadata={
+            "help": "the torch dtype"
+        }
+    )
 
 
 def extract_anthropic_prompt(prompt_and_response):
@@ -133,11 +139,24 @@ def get_hh(split: str, train_file: str, sanity_check: bool = False, silent: bool
 if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
     script_args = parser.parse_args_into_dataclasses()[0]
+    
+    
+    if script_args.torch_dtype == "float16":
+            torch_dtype = torch.float16
+    elif script_args.torch_dtype == "float32":
+        torch_dtype = torch.float32
+    elif script_args.torch_dtype == "bfloat16":
+        # for Amphere GPU (A100, A6000...)
+        # if you have trouble which lr doesn't decrease, try to use bfloat16
+        torch_dtype = torch.bfloat16
+    else:
+        torch_dtype = None
+    
 
     # 1. load a pretrained model
     model = AutoModelForCausalLM.from_pretrained(
         script_args.model_name_or_path,
-        #torch_dtype=script_args.torch_dtype,
+        torch_dtype=torch_dtype,
         )
 
     if script_args.ignore_bias_buffers:
@@ -148,7 +167,7 @@ if __name__ == "__main__":
 
     model_ref = AutoModelForCausalLM.from_pretrained(
         script_args.model_name_or_path,
-        #torch_dtype=script_args.torch_dtype
+        torch_dtype=torch_dtype,
         )
 
     tokenizer = AutoTokenizer.from_pretrained(script_args.model_name_or_path)

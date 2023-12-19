@@ -24,4 +24,4 @@ openai
 fire
 gradio
 chainlit
-
+bitsandbytes

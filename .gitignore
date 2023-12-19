@@ -7,8 +7,13 @@ src/configs/.env
 src/scripts/wandb/
 src/instruction_generators/prompt_templates/
 model_records/
+<<<<<<< HEAD
 src/crawling/
 model_hub/
+=======
+test/
+src/crawling/
+>>>>>>> 6032c2126b839a4706cd30a7a781fbec259a2e59
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

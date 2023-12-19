@@ -61,9 +61,15 @@ def main(cfg):
         # json file load
         elif cfg.src_path.split(".")[-1] == "json":
             with open(cfg.src_path, "r") as f:
-                json_data = json.load(f)
+                
+                # read line by line
+                json_data = []
+                for line in f:
+                    json_data.append(json.loads(line))
         else:
             json_data = None
+
+    prompt_template_text = open(cfg.prompt_template_path, "r").read()
     
     #####################################################
     # Preprocess
@@ -71,7 +77,7 @@ def main(cfg):
     if cfg.preprocess_type == "normal":
         PCM = PromptChainMaker(
             input_variables=["dialogues"],
-            prompt_template_path=cfg.prompt_template_path
+            prompt_template=cfg.prompt_template_path
             )
         prompt_chain_result_list = DPS.preprocess(
             data = json_data,
@@ -79,12 +85,22 @@ def main(cfg):
     elif cfg.preprocess_type == "prompt_chain":
         PCM = PromptChainMaker(
             input_variables=["dialogues"],
-            prompt_template_path=cfg.prompt_template_path
+            prompt_template=cfg.prompt_template_path
             )
         prompt_chain_result_list = DPS.preprocess_with_prompt_chain_generator(
             data = json_data,
             prompt_chain_maker = PCM.prompt_chain_maker
             )
+    elif cfg.preprocess_type == "prompt_chain_tinystories":
+        PCM = PromptChainMaker(
+            input_variables=["var1", "var2", "var3"],
+            prompt_template=prompt_template_text
+            )
+        prompt_chain_result_list = DPS.preprocess_with_prompt_chain_generator_tinystories(
+            data = json_data,
+            prompt_chain_maker = PCM.prompt_chain_maker
+            )
+        #print(prompt_chain_result_list)
     else:
         raise ValueError("preprocess_type should be normal or prompt_chain")
     
@@ -111,7 +127,9 @@ def main(cfg):
                 prompt=str(i)
                 )
             
-            post_gpt_result = DPS.postprocess(gpt_result)
+            print("gpt_result: ", gpt_result)
+            
+            post_gpt_result = DPS.postprocess_tinystories(gpt_result)
             
             append_to_dst(
                 dst_path=cfg.dst_path,

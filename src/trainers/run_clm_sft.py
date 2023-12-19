@@ -18,8 +18,8 @@ from trl import (
     DataCollatorForCompletionOnlyLM
 )
 
-tqdm.pandas()
-
+import os
+os.environ["WANDB_DISABLED"] = "true"
 
 # Define and parse arguments.
 @dataclass
@@ -129,6 +129,9 @@ class ScriptArguments:
     response_template: Optional[str] = field(
         default=None, metadata={"help": "response_template"}
     )
+    qlora: Optional[bool] = field(
+        default=False, metadata={"help": "Use qlora"}
+    )
 
 # main().
 def main():
@@ -140,8 +143,16 @@ def main():
         raise ValueError("You can't load the model in 8 bits and 4 bits at the same time")
     elif script_args.load_in_8bit or script_args.load_in_4bit:
         quantization_config = BitsAndBytesConfig(
-            load_in_8bit=script_args.load_in_8bit, load_in_4bit=script_args.load_in_4bit
+            load_in_8bit=script_args.load_in_8bit, 
+            load_in_4bit=script_args.load_in_4bit
         )
+        if script_args.load_in_4bit and script_args.qlora:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=script_args.load_in_4bit,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type='nf4'
+            )
         # Copy the model to each device
         device_map = {"": Accelerator().local_process_index}
         torch_dtype = torch.bfloat16

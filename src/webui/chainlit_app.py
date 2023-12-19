@@ -22,7 +22,7 @@ avatar_url = "https://avatars.githubusercontent.com/u/25720743?s=200&v=4"
 # Model
 #############################################################
 
-MODEL = "/workspace/Coding/lm-trainer/model_records/koalpaca_sft-v1"
+MODEL = "/workspace/Coding/lm-trainer/src/model_results/polyglot-12.8b-total-364004-v1"
 model = AutoModelForCausalLM.from_pretrained(
     MODEL,
     device_map="auto"
